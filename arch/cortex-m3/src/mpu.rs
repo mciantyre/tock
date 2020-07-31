@@ -1,5 +1,5 @@
-//! Implementation of the memory protection unit for the Cortex-M3 and
-//! Cortex-M4.
+//! Implementation of the memory protection unit for the Cortex-M3,
+//! Cortex-M4, and Cortex-M7.
 
 use core::cell::Cell;
 use core::cmp;
@@ -12,7 +12,7 @@ use kernel::common::StaticRef;
 use kernel::mpu;
 use kernel::AppId;
 
-/// MPU Registers for the Cortex-M3 and Cortex-M4 families
+/// MPU Registers for the Cortex-M3, Cortex-M4, and Cortex-M7 families
 /// Described in section 4.5 of
 /// <http://infocenter.arm.com/help/topic/com.arm.doc.dui0553a/DUI0553A_cortex_m4_dgug.pdf>
 #[repr(C)]
@@ -48,7 +48,7 @@ register_bitfields![u32,
         DREGION OFFSET(8) NUMBITS(8) [],
         /// Indicates whether the processor support unified (0) or separate
         /// (1) instruction and data regions. Always reads 0 on the
-        /// Cortex-M4.
+        /// Cortex-M4 and M7.
         SEPARATE OFFSET(0) NUMBITS(1) []
     ],
 
