@@ -265,7 +265,7 @@ impl<'a> GeneralPurposeTimer<'a> {
         let sr = self.registers.sr.extract();
         if sr.is_set(SR::OF1) {
             // Alarm triggered
-            self.alarm_client.map(|alarm_client| alarm_client.fired());
+            self.alarm_client.map(|alarm_client| alarm_client.alarm());
         }
         self.registers.sr.set(sr.get());
     }
@@ -286,41 +286,51 @@ pub static mut GPT1: GeneralPurposeTimer =
 pub static mut GPT2: GeneralPurposeTimer =
     GeneralPurposeTimer::new(GPT2_BASE, ccm::GPT2_SERIAL, ccm::GPT2_BUS);
 
-impl<'a> time::Time<u32> for GeneralPurposeTimer<'a> {
+impl<'a> time::Time for GeneralPurposeTimer<'a> {
     type Frequency = FreqGpt;
+    type Ticks = time::Ticks32;
 
-    fn now(&self) -> u32 {
-        self.count()
-    }
-
-    fn max_tics(&self) -> u32 {
-        u32::max_value()
+    fn now(&self) -> Self::Ticks {
+        self.count().into()
     }
 }
 
-impl<'a> time::Alarm<'a, u32> for GeneralPurposeTimer<'a> {
-    fn set_client(&'a self, client: &'a dyn time::AlarmClient) {
+impl<'a> time::Alarm<'a> for GeneralPurposeTimer<'a> {
+    fn set_alarm_client(&'a self, client: &'a dyn time::AlarmClient) {
         self.alarm_client.set(client);
     }
 
-    fn set_alarm(&self, tics: u32) {
-        self.registers.ocr1.set(tics);
+    fn set_alarm(&self, reference: Self::Ticks, dt: Self::Ticks) {
+        use time::{Ticks, Time};
+        self.disarm();
+
+        let mut expire = reference.wrapping_add(dt);
+        let now = self.now();
+        if !now.within_range(reference, expire) {
+            expire = now;
+        }
+        if expire.wrapping_sub(now) < self.minimum_dt() {
+            expire = now.wrapping_add(self.minimum_dt());
+        }
+
+        self.registers.ocr1.set(expire.into_u32());
         self.set_enable(true);
     }
 
-    fn get_alarm(&self) -> u32 {
-        self.registers.ocr1.get()
+    fn disarm(&self) -> kernel::ReturnCode {
+        self.set_enable(false);
+        kernel::ReturnCode::SUCCESS
     }
 
-    fn is_enabled(&self) -> bool {
+    fn get_alarm(&self) -> Self::Ticks {
+        self.registers.ocr1.get().into()
+    }
+
+    fn is_armed(&self) -> bool {
         self.registers.cr.is_set(CR::EN)
     }
 
-    fn disable(&self) {
-        self.set_enable(false);
-    }
-
-    fn enable(&self) {
-        self.set_enable(true);
+    fn minimum_dt(&self) -> Self::Ticks {
+        1.into()
     }
 }

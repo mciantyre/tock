@@ -148,7 +148,7 @@ impl<'a> PeriodicInterruptTimer<'a> {
         if self.oneshot.get() {
             self.set_enable(false);
         }
-        self.alarm_client.map(|alarm_client| alarm_client.fired());
+        self.alarm_client.map(|alarm_client| alarm_client.alarm());
     }
 
     /// Returns the current time counter for this PIT timer
