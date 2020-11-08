@@ -5,10 +5,12 @@
 
 pub mod chip;
 pub mod gpio;
+pub mod iomuxc;
 mod nvic;
 
+pub use imxrt::{ccm, dma, gpt, pit, uart, BASE_VECTORS};
+
 use cortexm7::{generic_isr, unhandled_interrupt};
-pub use imxrt::*;
 
 #[cfg_attr(all(target_arch = "arm", target_os = "none"), link_section = ".irqs")]
 #[cfg_attr(all(target_arch = "arm", target_os = "none"), used)]

@@ -172,19 +172,10 @@ pub struct PadControlRegister(StaticRef<ReadWrite<u32, PadCtl::Register>>);
 pub struct MuxControlGroup(u32);
 pub struct PadControlGroup(u32);
 
-pub const AD_B0_MUX_CTL: MuxControlGroup = MuxControlGroup(0x401F_80BC);
-pub const AD_B0_PAD_CTL: PadControlGroup = PadControlGroup(0x401F_82AC);
-
-pub const AD_B1_MUX_CTL: MuxControlGroup = MuxControlGroup(0x401F_80FC);
-pub const AD_B1_PAD_CTL: PadControlGroup = PadControlGroup(0x401F_82EC);
-
-pub const B0_MUX_CTL: MuxControlGroup = MuxControlGroup(0x401F_813C);
-pub const B0_PAD_CTL: PadControlGroup = PadControlGroup(0x401F_832C);
-
-pub const B1_MUX_CTL: MuxControlGroup = MuxControlGroup(0x401F_817C);
-pub const B1_PAD_CTL: PadControlGroup = PadControlGroup(0x401F_836C);
-
 impl MuxControlGroup {
+    pub const fn new(address: u32) -> Self {
+        MuxControlGroup(address)
+    }
     pub const unsafe fn pad(&self, pad_number: u32) -> MuxControlRegister {
         let offset = pad_number * core::mem::size_of::<u32>() as u32;
         MuxControlRegister(StaticRef::new((self.0 + offset) as *const _))
@@ -192,6 +183,9 @@ impl MuxControlGroup {
 }
 
 impl PadControlGroup {
+    pub const fn new(address: u32) -> Self {
+        PadControlGroup(address)
+    }
     pub const unsafe fn pad(&self, pad_number: u32) -> PadControlRegister {
         let offset = pad_number * core::mem::size_of::<u32>() as u32;
         PadControlRegister(StaticRef::new((self.0 + offset) as *const _))
@@ -271,7 +265,7 @@ impl PadControlRegister {
 
 pub struct Daisy(StaticRef<ReadWrite<u32>>);
 impl Daisy {
-    const fn new(addr: u32) -> Self {
+    pub const fn new(addr: u32) -> Self {
         Daisy(unsafe { StaticRef::new(addr as *const _) })
     }
 
@@ -279,6 +273,3 @@ impl Daisy {
         self.0.set(input);
     }
 }
-
-pub const UART2_RX_SELECT_INPUT: Daisy = Daisy::new(0x401F_852C);
-pub const UART2_TX_SELECT_INPUT: Daisy = Daisy::new(0x401F_8530);
