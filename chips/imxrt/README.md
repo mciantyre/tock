@@ -1,4 +1,4 @@
-For NXP's iMXRT10xx series processors
+For NXP's i.MX RT processors
 
 
 ## Links

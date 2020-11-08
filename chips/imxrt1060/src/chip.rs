@@ -1,4 +1,4 @@
-//! imxrt10xx chip implementation
+//! imxrt1060 chip implementation
 
 use kernel::Chip;
 
@@ -9,14 +9,14 @@ use crate::nvic;
 use crate::pit;
 use crate::uart;
 
-pub struct Imxrt10xx {
+pub struct Imxrt1060 {
     mpu: cortexm7::mpu::MPU,
     userspace_kernel_boundary: cortexm7::syscall::SysCall,
     systick: cortexm7::systick::SysTick,
 }
 
-impl Imxrt10xx {
-    /// Prepare the Imxrt10xx chip
+impl Imxrt1060 {
+    /// Prepare the Imxrt1060 chip
     ///
     /// Runs static initialization routines, like clock setup and DMA channel configuration.
     /// It should be called early in initialization, before preparing other peripherals.
@@ -39,7 +39,7 @@ impl Imxrt10xx {
         uart::UART2.set_tx_dma_channel(&dma::DMA_CHANNELS[4]);
         uart::UART2.set_rx_dma_channel(&dma::DMA_CHANNELS[20]);
 
-        Imxrt10xx {
+        Imxrt1060 {
             mpu: cortexm7::mpu::MPU::new(),
             userspace_kernel_boundary: cortexm7::syscall::SysCall::new(),
             systick: cortexm7::systick::SysTick::new_with_calibration_and_external_clock(10_000),
@@ -47,7 +47,7 @@ impl Imxrt10xx {
     }
 }
 
-impl Chip for Imxrt10xx {
+impl Chip for Imxrt1060 {
     type MPU = cortexm7::mpu::MPU;
     type UserspaceKernelBoundary = cortexm7::syscall::SysCall;
     type SchedulerTimer = cortexm7::systick::SysTick;

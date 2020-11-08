@@ -119,7 +119,7 @@ impl ClockGate {
     /// A clock gate register and field, CCGR3_CG11, would be expressed as
     ///
     /// ```
-    /// # use imxrt10xx::ccm::ClockGate;
+    /// # use imxrt::ccm::ClockGate;
     /// let cg = ClockGate::new(3, 11);
     /// ```
     const fn new(register: usize, field: u32) -> Self {

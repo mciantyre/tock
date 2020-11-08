@@ -627,7 +627,7 @@ impl DmaChannel {
     ///
     /// Assumes that the caller knows that this DMA channel was the source of the
     /// interrupt, or the cause of a DMA error. See `is_interrupt()` and `is_error()`.
-    pub(crate) fn handle_interrupt(&self) {
+    pub fn handle_interrupt(&self) {
         self.clear_interrupt();
         let hardware_source = self.hardware_source.clone().get().unwrap();
         let result = if self.is_error() {
