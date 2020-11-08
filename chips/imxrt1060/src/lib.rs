@@ -4,6 +4,7 @@
 #![no_std]
 
 pub mod chip;
+pub mod gpio;
 mod nvic;
 
 use cortexm7::{generic_isr, unhandled_interrupt};

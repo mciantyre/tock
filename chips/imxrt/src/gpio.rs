@@ -2,12 +2,6 @@
 
 // https://www.nxp.com/docs/en/application-note/AN5078.pdf
 
-mod one;
-mod two;
-
-pub use one::GPIO1;
-pub use two::GPIO2;
-
 use crate::iomuxc;
 use kernel::{
     common::{
@@ -50,32 +44,12 @@ registers::register_structs! {
     }
 }
 
-const GPIO1_BASE: StaticRef<GpioRegisters> =
-    unsafe { StaticRef::new(0x401B_8000 as *const GpioRegisters) };
-
-const GPIO2_BASE: StaticRef<GpioRegisters> =
-    unsafe { StaticRef::new((0x401B_8000 + 0x4000) as *const GpioRegisters) };
-
-// const GPIO3_BASE: StaticRef<GpioRegisters> =
-//     unsafe { StaticRef::new((0x401B_8000 + 0x8000) as *const GpioRegisters) };
-
-// const GPIO4_BASE: StaticRef<GpioRegisters> =
-//     unsafe { StaticRef::new((0x401B_8000 + 0xC000) as *const GpioRegisters) };
-
-// const GPIO5_BASE: StaticRef<GpioRegisters> =
-//     unsafe { StaticRef::new(0x400C_0000 as *const GpioRegisters) };
-
-// const GPIO6_BASE: StaticRef<GpioRegisters> =
-//     unsafe { StaticRef::new(0x4200_0000 as *const GpioRegisters) };
-
-// const GPIO7_BASE: StaticRef<GpioRegisters> =
-//     unsafe { StaticRef::new((0x4200_0000 + 0x4000) as *const GpioRegisters) };
-
-// const GPIO8_BASE: StaticRef<GpioRegisters> =
-//     unsafe { StaticRef::new((0x4200_0000 + 0x8000) as *const GpioRegisters) };
-
-// const GPIO9_BASE: StaticRef<GpioRegisters> =
-//     unsafe { StaticRef::new((0x4200_0000 + 0xC000) as *const GpioRegisters) };
+pub struct Base(StaticRef<GpioRegisters>);
+impl Base {
+    pub const fn new(address: u32) -> Self {
+        Base(unsafe { StaticRef::new(address as *const _) })
+    }
+}
 
 pub struct Pin {
     base: StaticRef<GpioRegisters>,
@@ -85,14 +59,14 @@ pub struct Pin {
 }
 
 impl Pin {
-    const fn new(
-        base: StaticRef<GpioRegisters>,
+    pub const fn new(
+        base: Base,
         offset: u32,
         mux: iomuxc::MuxControlRegister,
         pad: iomuxc::PadControlRegister,
     ) -> Self {
         Pin {
-            base,
+            base: base.0,
             mask: 1 << offset,
             mux,
             pad,
