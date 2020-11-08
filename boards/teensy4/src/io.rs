@@ -3,8 +3,8 @@ use core::fmt::{self, Write};
 use kernel::debug::{self, IoWrite};
 use kernel::hil::led;
 
-use imxrt10xx::gpio;
-use imxrt10xx::uart;
+use imxrt1060::gpio;
+use imxrt1060::uart;
 
 use crate::pinmux;
 

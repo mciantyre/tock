@@ -4,7 +4,7 @@
 //! development board. This module provides some conveniences
 //! for enabling and disabling different peripherals.
 
-use imxrt10xx::iomuxc;
+use imxrt1060::iomuxc;
 
 /// A minimal pin mux suitable for debugging
 pub unsafe fn debug() {

@@ -62,7 +62,7 @@ SECTIONS
     /* Size of the program image (assuming that we also need the boot section) */
     LONG((_etext-_stext) + (_erelocate-_srelocate) + SIZEOF(.boot));
     LONG(0x00000000);           /* Plugin flag (unused) */
-    /* End of iMXRT10xx magic
+    /* End of iMXRT magic
      *
      * Need to align vector table on a 1024-byte boundary given the size of the table
      */

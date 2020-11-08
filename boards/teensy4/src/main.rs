@@ -11,7 +11,7 @@ mod fcb;
 mod io;
 mod pinmux;
 
-use imxrt10xx;
+use imxrt1060;
 use kernel::capabilities;
 use kernel::common::dynamic_deferred_call::{DynamicDeferredCall, DynamicDeferredCallClientState};
 use kernel::component::Component;
@@ -45,14 +45,14 @@ static mut APP_HACK: u8 = 0;
 
 /// Teensy 4 platform
 struct Teensy4 {
-    led: &'static capsules::led::LED<'static, imxrt10xx::gpio::Pin>,
+    led: &'static capsules::led::LED<'static, imxrt1060::gpio::Pin>,
     console: &'static capsules::console::Console<'static>,
     ipc: kernel::ipc::IPC,
     alarm: &'static capsules::alarm::AlarmDriver<
         'static,
         capsules::virtual_alarm::VirtualMuxAlarm<
             'static,
-            imxrt10xx::gpt::GeneralPurposeTimer<'static>,
+            imxrt1060::gpt::GeneralPurposeTimer<'static>,
         >,
     >,
 }
@@ -72,11 +72,11 @@ impl kernel::Platform for Teensy4 {
     }
 }
 
-static mut CHIP: Option<&'static imxrt10xx::chip::Imxrt10xx> = None;
+static mut CHIP: Option<&'static imxrt1060::chip::Imxrt1060> = None;
 
 #[no_mangle]
 pub unsafe fn reset_handler() {
-    imxrt10xx::init();
+    imxrt1060::init();
     pinmux::debug();
 
     // Prepare the chip
@@ -84,8 +84,8 @@ pub unsafe fn reset_handler() {
     // Chip initialization employs some static peripheral setup, so
     // it should be called early.
     let chip = static_init!(
-        imxrt10xx::chip::Imxrt10xx,
-        imxrt10xx::chip::Imxrt10xx::new()
+        imxrt1060::chip::Imxrt1060,
+        imxrt1060::chip::Imxrt1060::new()
     );
     CHIP = Some(chip);
 
@@ -101,7 +101,7 @@ pub unsafe fn reset_handler() {
     DynamicDeferredCall::set_global_instance(dynamic_deferred_caller);
 
     let uart_mux = components::console::UartMuxComponent::new(
-        &imxrt10xx::uart::UART2,
+        &imxrt1060::uart::UART2,
         115_200,
         dynamic_deferred_caller,
     )
@@ -114,20 +114,20 @@ pub unsafe fn reset_handler() {
 
     // LED
     let led = components::led::LedsComponent::new(components::led_component_helper!(
-        imxrt10xx::gpio::Pin,
+        imxrt1060::gpio::Pin,
         (
-            &imxrt10xx::gpio::GPIO2[3],
+            &imxrt1060::gpio::GPIO2[3],
             kernel::hil::gpio::ActivationMode::ActiveHigh
         )
     ))
-    .finalize(components::led_component_buf!(imxrt10xx::gpio::Pin));
+    .finalize(components::led_component_buf!(imxrt1060::gpio::Pin));
 
     // Alarm
-    let mux_alarm = components::alarm::AlarmMuxComponent::new(&imxrt10xx::gpt::GPT1).finalize(
-        components::alarm_mux_component_helper!(imxrt10xx::gpt::GeneralPurposeTimer),
+    let mux_alarm = components::alarm::AlarmMuxComponent::new(&imxrt1060::gpt::GPT1).finalize(
+        components::alarm_mux_component_helper!(imxrt1060::gpt::GeneralPurposeTimer),
     );
     let alarm = components::alarm::AlarmDriverComponent::new(board_kernel, mux_alarm).finalize(
-        components::alarm_component_helper!(imxrt10xx::gpt::GeneralPurposeTimer),
+        components::alarm_component_helper!(imxrt1060::gpt::GeneralPurposeTimer),
     );
 
     //
