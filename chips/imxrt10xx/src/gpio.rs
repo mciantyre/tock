@@ -2112,3 +2112,47 @@ impl<'a> hil::gpio::Interrupt<'a> for Pin<'a> {
         }
     }
 }
+
+/// An iterator that returns the offsets of each high bit
+///
+/// Each offset is returned only once. Order of returned
+/// offsets is not guaranteed.
+struct BitOffsets(u32);
+
+impl Iterator for BitOffsets {
+    type Item = u32;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0 == 0 {
+            None
+        } else {
+            let offset = self.0.trailing_zeros();
+            self.0 &= self.0 - 1;
+            Some(offset)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BitOffsets;
+
+    #[test]
+    fn bit_offset_iterator() {
+        assert_eq!(BitOffsets(0).next(), None);
+
+        let iter = BitOffsets(u32::max_value());
+        let expected: Vec<_> = (0..32).collect();
+        let actual: Vec<_> = iter.collect();
+        assert_eq!(actual, expected);
+
+        let iter = BitOffsets(0x5555_5555);
+        let expected: Vec<_> = (0..32).step_by(2).collect();
+        let actual: Vec<_> = iter.collect();
+        assert_eq!(actual, expected);
+
+        let iter = BitOffsets(0xAAAA_AAAA);
+        let expected: Vec<_> = (0..32).skip(1).step_by(2).collect();
+        let actual: Vec<_> = iter.collect();
+        assert_eq!(actual, expected);
+    }
+}
