@@ -494,7 +494,7 @@ pub enum PinId {
 }
 
 impl PinId {
-    pub fn get_port_number(&self) -> GpioPort {
+    fn get_port_number(&self) -> GpioPort {
         let mut pad_num: u16 = *self as u16;
         pad_num >>= 6;
         let mut pin_num: u8 = *self as u8;
@@ -517,12 +517,6 @@ impl PinId {
             0b111 => GpioPort::GPIO5,
             _ => GpioPort::GPIO1,
         }
-    }
-
-    pub fn get_pad_number(&self) -> u16 {
-        let mut pad_num: u16 = *self as u16;
-        pad_num >>= 6;
-        pad_num
     }
 
     pub fn get_pin(&self) -> &Option<Pin<'static>> {
@@ -555,7 +549,7 @@ impl PinId {
         &mut PIN[usize::from(pad_num)][usize::from(pin_num)]
     }
 
-    pub fn get_port(&self) -> &Port {
+    fn get_port(&self) -> &Port {
         let port_num: GpioPort = self.get_port_number();
 
         match port_num {
@@ -569,7 +563,7 @@ impl PinId {
 
     // extract the last 6 bits. [6:0] is the pin number, [9:7] is the pad
     // number
-    pub fn get_pin_number(&self) -> u8 {
+    fn get_pin_number(&self) -> u8 {
         let mut pin_num = *self as u8;
 
         pin_num = pin_num & 0b00111111;
@@ -635,7 +629,7 @@ impl Port {
         self.clock.disable();
     }
 
-    pub fn handle_interrupt(&self) {
+    pub(crate) fn handle_interrupt(&self) {
         let mut isr_val: u32 = 0;
         let mut imr_val: u32 = self.registers.imr.get();
 
@@ -752,7 +746,7 @@ macro_rules! declare_gpio_pins {
 // We need to use `Option<Pin>`, instead of just `Pin` because AdB0 for
 // example has only sixteen pins - from AdB0_00 to AdB0_15, rather than
 // the 42 pins needed for Emc.
-pub static mut PIN: [[Option<Pin<'static>>; 42]; 8] = [
+static mut PIN: [[Option<Pin<'static>>; 42]; 8] = [
     declare_gpio_pins! {
         Emc00 Emc01 Emc02 Emc03 Emc04 Emc05 Emc06 Emc07
         Emc08 Emc09 Emc10 Emc11 Emc12 Emc13 Emc14 Emc15
@@ -1079,15 +1073,11 @@ impl<'a> Pin<'a> {
         }
     }
 
-    pub fn set_client(&self, client: &'a dyn hil::gpio::Client) {
-        self.client.set(client);
-    }
-
-    pub fn handle_interrupt(&self) {
+    fn handle_interrupt(&self) {
         self.client.map(|client| client.fired());
     }
 
-    pub fn get_mode(&self) -> Mode {
+    fn get_mode(&self) -> Mode {
         let port = self.pinid.get_port();
 
         let val = match self.pinid.get_pin_number() {
@@ -1129,7 +1119,7 @@ impl<'a> Pin<'a> {
         Mode::from_u32(val).unwrap_or(Mode::Input)
     }
 
-    pub fn set_mode(&self, mode: Mode) {
+    fn set_mode(&self, mode: Mode) {
         let port = self.pinid.get_port();
 
         match self.pinid.get_pin_number() {
@@ -1231,10 +1221,6 @@ impl<'a> Pin<'a> {
             }
             _ => {}
         }
-    }
-
-    pub fn get_pinid(&self) -> PinId {
-        self.pinid
     }
 
     fn set_output_high(&self) {
