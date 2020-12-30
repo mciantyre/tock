@@ -1,5 +1,3 @@
-use cortexm7;
-use cortexm7::support::atomic;
 use kernel::common::cells::OptionalCell;
 use kernel::common::registers::{register_bitfields, ReadOnly, ReadWrite};
 use kernel::common::StaticRef;
@@ -9,7 +7,6 @@ use kernel::ClockInterface;
 use kernel::ReturnCode;
 
 use crate::ccm;
-use crate::nvic;
 
 /// General purpose timers
 #[repr(C)]
@@ -160,7 +157,6 @@ pub struct Gpt<'a, F> {
     registers: StaticRef<GptRegisters>,
     clock: GptClock<'a>,
     client: OptionalCell<&'a dyn hil::time::AlarmClient>,
-    irqn: u32,
     _frequency: core::marker::PhantomData<F>,
 }
 
@@ -168,30 +164,23 @@ impl<'a, F: hil::time::Frequency> Gpt<'a, F> {
     pub const fn new_gpt1(ccm: &'a crate::ccm::Ccm) -> Self {
         Gpt::new(
             GPT1_BASE,
-            nvic::GPT1,
             ccm::PeripheralClock::ccgr1(ccm, ccm::HCLK1::GPT1),
         )
     }
     pub const fn new_gpt2(ccm: &'a crate::ccm::Ccm) -> Self {
         Gpt::new(
             GPT2_BASE,
-            nvic::GPT2,
             ccm::PeripheralClock::ccgr0(ccm, ccm::HCLK0::GPT2),
         )
     }
 }
 
 impl<'a, F> Gpt<'a, F> {
-    const fn new(
-        registers: StaticRef<GptRegisters>,
-        irqn: u32,
-        clock_gate: ccm::PeripheralClock<'a>,
-    ) -> Self {
+    const fn new(registers: StaticRef<GptRegisters>, clock_gate: ccm::PeripheralClock<'a>) -> Self {
         Gpt {
             registers,
             clock: GptClock(clock_gate),
             client: OptionalCell::empty(),
-            irqn,
             _frequency: core::marker::PhantomData,
         }
     }
@@ -209,8 +198,8 @@ impl<'a, F> Gpt<'a, F> {
     }
 
     pub fn handle_interrupt(&self) {
-        self.registers.sr.modify(SR::OF1::SET);
-        self.registers.ir.modify(IR::OF1IE::CLEAR);
+        self.registers.sr.write(SR::OF1::SET);
+        self.registers.ir.write(IR::OF1IE::CLEAR);
 
         self.client.map(|client| client.alarm());
     }
@@ -294,8 +283,6 @@ impl<'a, F> Gpt<'a, F> {
     pub fn start(&self) {
         // Enable the GPT
         self.registers.cr.modify(CR::EN::SET);
-        // Enable the Output Compare 1 Interrupt Enable
-        self.registers.ir.modify(IR::OF1IE::SET);
     }
 }
 
@@ -343,7 +330,7 @@ impl<'a, F: hil::time::Frequency> hil::time::Alarm<'a> for Gpt<'a, F> {
 
         self.disarm();
         self.registers.ocr1.set(expire.into_u32());
-        self.registers.ir.modify(IR::OF1IE::SET);
+        self.registers.ir.write(IR::OF1IE::SET);
     }
 
     fn get_alarm(&self) -> Self::Ticks {
@@ -351,13 +338,7 @@ impl<'a, F: hil::time::Frequency> hil::time::Alarm<'a> for Gpt<'a, F> {
     }
 
     fn disarm(&self) -> ReturnCode {
-        unsafe {
-            atomic(|| {
-                // Disable counter
-                self.registers.ir.modify(IR::OF1IE::CLEAR);
-                cortexm7::nvic::Nvic::new(self.irqn).clear_pending();
-            });
-        }
+        self.registers.ir.write(IR::OF1IE::CLEAR);
         ReturnCode::SUCCESS
     }
 
